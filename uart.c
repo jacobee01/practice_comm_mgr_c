@@ -55,28 +55,51 @@ void *thread_uart(void *arg)
 
     while(1)
     {
-        // printf("thread\n");
-        // sleep(1);
+        poll_state = poll((struct pollfd*)&poll_events, 1, 1000 );
 
-
-        memset(buf, 0, sizeof(buf));
-        res = read(fd_arg, buf, 255);
-        if(res>0)
+        if(poll_state > 0)
         {
-            printf("response : %d ", res);
-            for(i=0; i < res; ++i)
+            if(poll_events.revents & POLLIN )
             {
-                printf("%x ", buf[i]);
+                cnt = read(fd_arg, buf, 1024);
+                enqueue_buffer(buf,cnt);
             }
-            printf("\n");
-            enqueue_buffer(buf,res);
-            printf("buffer : ");
-            for(j=0; j<QUEUE_MAX;j++)
+            if(poll_events.revents & POLLERR)
             {
-                printf("%x ", uart_buffer[j]);
+                printf("POLLERR\n");
+                // break;
             }
 
         }
+        else if (poll_state < 0)
+        {
+            printf("Uart poll error!\n");
+            //break;
+        }
+        else if(poll_state == 0)
+        {
+            printf("wait uart...\n");
+        } 
+        
+
+        // memset(buf, 0, sizeof(buf));
+        // res = read(fd_arg, buf, 255);
+        // if(res>0)
+        // {
+        //     printf("response : %d ", res);
+        //     for(i=0; i < res; ++i)
+        //     {
+        //         printf("%x ", buf[i]);
+        //     }
+        //     printf("\n");
+        //     enqueue_buffer(buf,res);
+        //     printf("buffer : ");
+        //     for(j=0; j<QUEUE_MAX;j++)
+        //     {
+        //         printf("%x ", uart_buffer[j]);
+        //     }
+
+        // }
     }
     close(fd_arg);
 }
